@@ -1,0 +1,19 @@
+Max. F1-score: 0.902
+name                    wdc_medium_ditto_-4452394167027166347
+dataset                 wdc
+path_to_train_set       data/raw/wdc_lspm/all_train/all_train_medium.json.gz
+path_to_val_set         data/raw/wdc_lspm/all_valid/all_valid_medium.csv
+path_to_test_set        data/raw/wdc_lspm/all_gs.json.gz
+model                   ditto
+offline_augmentation    []
+online_augmentation     ['graph']
+batch_size              32
+max_string_len          1000
+max_input_length        256
+epochs                  30
+label_noise_min_degree  5
+label_noise_threshold   7
+pos_neg_ratio_cap       3
+
+Epochs actually trained: 30
+Execution took 0 minutes

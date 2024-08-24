@@ -1,0 +1,19 @@
+Max. F1-score: 0.8033
+name                    walmart_amazon_ditto_5853829482502571676
+dataset                 walmart_amazon
+path_to_train_set       data/raw/walmart_amazon/train.csv
+path_to_val_set         data/raw/walmart_amazon/valid.csv
+path_to_test_set        data/raw/walmart_amazon/test.csv
+model                   ditto
+offline_augmentation    []
+online_augmentation     ['graph']
+batch_size              32
+max_string_len          1000
+max_input_length        256
+epochs                  30
+label_noise_min_degree  2
+label_noise_threshold   3
+pos_neg_ratio_cap       2
+
+Epochs actually trained: 30
+Execution took 22 minutes

@@ -1,0 +1,19 @@
+Max. F1-score: 0.9004
+name                    markt_pilot_l_bert_7287936956793162156
+dataset                 markt_pilot
+path_to_train_set       data/raw/markt_pilot_dataset/l_markt_pilot_dataset_train.parquet
+path_to_val_set         data/raw/markt_pilot_dataset/l_markt_pilot_dataset_val.parquet
+path_to_test_set        data/raw/markt_pilot_dataset/markt_pilot_dataset_test.parquet
+model                   bert
+offline_augmentation    []
+online_augmentation     ['graph']
+batch_size              32
+max_string_len          1000
+max_input_length        128
+epochs                  30
+label_noise_min_degree  2
+label_noise_threshold   7
+pos_neg_ratio_cap       3
+
+Epochs actually trained: 15
+Execution took 946 minutes

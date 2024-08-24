@@ -1,0 +1,16 @@
+Max. F1-score: 0.885
+name                  markt_pilot_m_ditto
+dataset               markt_pilot
+path_to_train_set     data/raw/markt_pilot_dataset/m_markt_pilot_dataset_train.parquet
+path_to_val_set       data/raw/markt_pilot_dataset/m_markt_pilot_dataset_val.parquet
+path_to_test_set      data/raw/markt_pilot_dataset/markt_pilot_dataset_test.parquet
+model                 ditto
+offline_augmentation  []
+online_augmentation   ['graph']
+batch_size            32
+max_string_len        1000
+max_input_length      256
+epochs                2
+
+Epochs actually trained: 2
+Execution took 14 minutes

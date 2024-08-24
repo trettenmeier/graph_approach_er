@@ -1,0 +1,19 @@
+Max. F1-score: 0.8488
+name                    walmart_amazon_bert_969357364345053723
+dataset                 walmart_amazon
+path_to_train_set       data/raw/walmart_amazon/train.csv
+path_to_val_set         data/raw/walmart_amazon/valid.csv
+path_to_test_set        data/raw/walmart_amazon/test.csv
+model                   bert
+offline_augmentation    []
+online_augmentation     ['graph']
+batch_size              32
+max_string_len          1000
+max_input_length        128
+epochs                  30
+label_noise_min_degree  7
+label_noise_threshold   5
+pos_neg_ratio_cap       3
+
+Epochs actually trained: 17
+Execution took 8 minutes
