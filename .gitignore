@@ -139,4 +139,4 @@ cython_debug/
 **/mlruns
 **/.DS_Store
 **/lightning_logs**
-graph_aug_for_er/config.yml
+graph_approach_for_er/config.yml
