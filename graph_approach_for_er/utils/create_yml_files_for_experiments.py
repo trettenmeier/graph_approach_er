@@ -39,6 +39,7 @@ def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_n
         "max_input_length": 128,
         "epochs": epochs,
         "online_augmentation": ["graph"],
+        "offline_augmentation": [],
         "label_noise_min_degree": label_noise_min_degree,
         "label_noise_threshold": label_noise_threshold,
         "pos_neg_ratio_cap": pos_neg_ratio_cap,
