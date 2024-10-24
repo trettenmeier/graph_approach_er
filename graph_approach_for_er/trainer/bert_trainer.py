@@ -87,12 +87,11 @@ class Trainer:
 
         logging.info(f"======== Starting baseline training ========")
         t0 = time.time()
-        total_train_loss = 0
-        avg_train_loss = 0
 
         for epoch in range(0, self.epochs):
             logging.info(f"======== Epoch {epoch + 1} / {self.epochs} ========")
-
+            total_train_loss = 0
+            avg_train_loss = 0
             self.model.train()
 
             if StopTrainingWhenTrainLossIsNearZero.training_loss_is_near_zero(avg_train_loss) and epoch != 0:
