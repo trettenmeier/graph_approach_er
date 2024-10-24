@@ -44,7 +44,7 @@ def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_n
         "pos_neg_ratio_cap": pos_neg_ratio_cap,
     }
 
-    filename = f"{dataset.name}{dataset.name}_bert_{str(hash(json.dumps(yml_data)))}.yml"  # bert is hardcoded atm!
+    filename = f"{dataset.name}_{str(hash(json.dumps(yml_data)))}.yml"
 
     with open(os.path.join(path, filename), "w") as file:
         yaml.dump(yml_data, file)
