@@ -22,7 +22,8 @@ from graph_approach_for_er.utils.load_config import ExperimentConfiguration
 
 
 class Trainer:
-    def __init__(self, model, val_dataloader, experiment: ExperimentConfiguration, working_dir: str):
+    def __init__(self, model, val_dataloader, experiment: ExperimentConfiguration, working_dir: str,
+                 train_dataloader=None):
         seed_val = 42
 
         random.seed(seed_val)
@@ -50,6 +51,7 @@ class Trainer:
 
         self.epochs = experiment.epochs
         self.val_dataloader = val_dataloader
+        self.train_dataloader = train_dataloader
         self.optimizer = AdamW(self.model.parameters(), lr=2e-5, eps=1e-8)
 
         self.reduce_lr_on_plateau = ReduceLROnPlateau(self.optimizer, "min", factor=0.5, patience=5, verbose=True)
@@ -77,6 +79,83 @@ class Trainer:
 
         return result, labels
 
+    def train_baseline(self):
+        self.training_stats = []
+        training_start_time = time.time()
+
+        loss = CrossEntropyLoss()
+
+        logging.info(f"======== Starting baseline training ========")
+        t0 = time.time()
+        total_train_loss = 0
+        avg_train_loss = 0
+
+        for epoch in range(0, self.epochs):
+            logging.info(f"======== Epoch {epoch + 1} / {self.epochs} ========")
+
+            self.model.train()
+
+            if StopTrainingWhenTrainLossIsNearZero.training_loss_is_near_zero(avg_train_loss) and epoch != 0:
+                logging.info("stopping training because loss is near zero")
+                logging.info("")
+                logging.info("Loading best model.")
+                self.load_trained_model()
+                self.model.eval()
+                logging.info(f"Total training took {self.format_time(time.time() - training_start_time)}")
+                break
+
+            for step, batch in enumerate(self.train_dataloader):
+                if step % 40 == 0 and not step == 0:
+                    elapsed = self.format_time(time.time() - t0)
+                    logging.info(f"Step {step}. Elapsed: {elapsed}")
+
+                self.model.zero_grad()
+                self.optimizer.zero_grad()
+
+                input_ids = batch["input_ids"].to(self.device)
+                token_type_ids = batch["token_type_ids"].to(self.device)
+                labels = batch["labels"].to(self.device, dtype=torch.long)
+
+                # forward pass
+                outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                logits = outputs["logits"]
+                ce_loss = loss(logits, labels.to(self.device))
+                total_train_loss += ce_loss.item()
+
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+
+                ce_loss.backward()
+                self.optimizer.step()
+                self.model.zero_grad()
+                loss.zero_grad()
+
+                # validate every n steps
+                if step % 10000 == 0 and not step == 0:
+                    self.validation(0, 0, self.format_time(time.time() - t0))
+                    self.model.train()
+
+            avg_train_loss = total_train_loss / step
+            training_time = self.format_time(time.time() - t0)
+
+            logging.info("")
+            logging.info(f"  Average training loss: {avg_train_loss}")
+            logging.info(f"  Training epoch took: {training_time}")
+            logging.info("")
+            logging.info("Running Validation...")
+
+            avg_val_loss = self.validation(epoch, avg_train_loss, training_time)
+
+            self.reduce_lr_on_plateau.step(avg_val_loss)
+
+            if self.stop_training:
+                logging.info("early stopping.")
+                break
+
+        logging.info("")
+        logging.info("Loading best model.")
+        self.load_trained_model()
+        logging.info(f"Total training took {self.format_time(time.time() - training_start_time)}")
+
     def train(self, df_train):
         self.training_stats = []
         training_start_time = time.time()
@@ -93,6 +172,11 @@ class Trainer:
             cols = df_train.columns.tolist()
             cols_left = [i for i in cols if "left" in i]
             cols_right = [i for i in cols if "right" in i]
+            df_train[cols_left] = df_train[cols_left].astype(str)
+            df_train[cols_right] = df_train[cols_right].astype(str)
+        elif self.experiment.dataset == "mrsp":
+            cols_left = ["sentence1"]
+            cols_right = ["sentence2"]
             df_train[cols_left] = df_train[cols_left].astype(str)
             df_train[cols_right] = df_train[cols_right].astype(str)
 
@@ -174,8 +258,8 @@ class Trainer:
             with torch.no_grad():
                 logging.info("feeding forward all pairs to determine the loss")
                 for batch in tqdm(
-                    graph_augmentation.all_pairs_dataloader(),
-                    total=int(len(graph_augmentation.all_pairs) / self.experiment.batch_size),
+                        graph_augmentation.all_pairs_dataloader(),
+                        total=int(len(graph_augmentation.all_pairs) / self.experiment.batch_size),
                 ):
                     input_ids = []
                     token_type_ids = []
@@ -214,8 +298,10 @@ class Trainer:
                 min_degree_to_consider=graph_augmentation.label_noise_min_degree
             )
 
-            list_with_hardness_cleaned = [i for i in list_with_hardness if i[0] not in significant_nodes and i[1] not in significant_nodes]
-            logging.info(f"Removed {len(list_with_hardness) - len(list_with_hardness_cleaned)} of {len(list_with_hardness)} entries")
+            list_with_hardness_cleaned = [i for i in list_with_hardness if
+                                          i[0] not in significant_nodes and i[1] not in significant_nodes]
+            logging.info(
+                f"Removed {len(list_with_hardness) - len(list_with_hardness_cleaned)} of {len(list_with_hardness)} entries")
 
             list_with_hardness_cleaned = sorted(list_with_hardness_cleaned, key=lambda x: x[3], reverse=True)
             positives_list = [i for i in list_with_hardness_cleaned if i[2] == 1]
@@ -233,15 +319,16 @@ class Trainer:
             pos_neg_ratio = df_train[df_train.label == 1].shape[0] / df_train[df_train.label == 0].shape[0]
 
             negatives_list = sorted(negatives_list, key=lambda x: x[3], reverse=True)
-            expand_factor = min([int(1/pos_neg_ratio), graph_augmentation.pos_neg_ratio_cap])
-            final_list.extend(negatives_list[: len(positives_list)*expand_factor])
+            expand_factor = min([int(1 / pos_neg_ratio), graph_augmentation.pos_neg_ratio_cap])
+            final_list.extend(negatives_list[: len(positives_list) * expand_factor])
 
             random.shuffle(final_list)
 
             for step, batch in enumerate(graph_augmentation.batch_iterable(final_list)):
                 if step % 40 == 0 and not step == 0:
                     elapsed = self.format_time(time.time() - t0)
-                    logging.info(f"Step {step}  of  {int(len(final_list)/self.experiment.batch_size)}. Elapsed: {elapsed}")
+                    logging.info(
+                        f"Step {step}  of  {int(len(final_list) / self.experiment.batch_size)}. Elapsed: {elapsed}")
 
                 self.model.zero_grad()
                 self.optimizer.zero_grad()

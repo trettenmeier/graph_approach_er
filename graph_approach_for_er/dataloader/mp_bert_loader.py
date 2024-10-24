@@ -12,10 +12,21 @@ from graph_approach_for_er.augmenter.mixda import MixDA
 
 
 class MarktPilotBertLoader:
-    def __init__(self, df_val, df_test, experiment: ExperimentConfiguration):
+    def __init__(self, df_train, df_val, df_test, experiment: ExperimentConfiguration):
+        self.df_train = df_train
         self.df_val = df_val
         self.df_test = df_test
         self.experiment = experiment
+
+    def get_train_loader(self):
+        client_sentences, page_sentences, labels = self._get_sentences_and_labels(self.df_train)
+        dataset = self._get_torch_dataset(client_sentences, page_sentences, labels)
+
+        return DataLoader(
+            dataset,
+            sampler=RandomSampler(dataset),
+            batch_size=self.experiment.batch_size
+        )
 
     def get_val_loader(self):
         client_sentences, page_sentences, labels = self._get_sentences_and_labels(self.df_val)

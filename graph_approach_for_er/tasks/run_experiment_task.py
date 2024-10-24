@@ -4,28 +4,15 @@ import os
 import random
 import time
 
-import joblib
 import luigi
 import numpy as np
 import pandas as pd
 import torch
 
-from graph_approach_for_er.dataloader.magellan_bert_loader import MagellanBertLoader
-from graph_approach_for_er.dataloader.magellan_non_bert_loader import MagellanNonBertLoader
-from graph_approach_for_er.dataloader.mp_bert_loader import MarktPilotBertLoader
-from graph_approach_for_er.dataloader.mp_non_bert_loader import MarktPilotNonBertLoader
-from graph_approach_for_er.dataloader.wdc_bert_loader import WdcBertLoader
-from graph_approach_for_er.dataloader.wdc_non_bert_loader import WdcNonBertLoader
+from graph_approach_for_er.dataloader.mrsp_loader import MrspLoader
 from graph_approach_for_er.metrics.metricsbag import MetricsBag
 from graph_approach_for_er.models.bert import get_model as get_bert_model
 from graph_approach_for_er.tasks.base import LuigiBaseTask
-from graph_approach_for_er.tasks.preprocess_magellan_train_data import PreprocessMagellanTrainDataTask
-from graph_approach_for_er.tasks.preprocess_magellan_val_test_data import PreprocessMagellanValTestDataTask
-from graph_approach_for_er.tasks.preprocess_mp_train_data import PreprocessMarktPilotTrainDataTask
-from graph_approach_for_er.tasks.preprocess_mp_val_test_data import PreprocessMarktPilotValTestDataTask
-from graph_approach_for_er.tasks.preprocess_wdc_train_data import PreprocessWDCTrainDataTask
-from graph_approach_for_er.tasks.preprocess_wdc_val_test_data import PreprocessWdcValTestDataTask
-from graph_approach_for_er.tasks.train_ditto import TrainDittoTask
 from graph_approach_for_er.trainer.bert_trainer import Trainer as BertTrainer
 from graph_approach_for_er.utils.load_config import load_global_config, load_config
 
@@ -44,17 +31,6 @@ class RunExperimentTask(LuigiBaseTask):
 
     def requires(self):
         requirements = {}
-
-        if self.experiment.dataset == "markt_pilot":
-            requirements["train_data"] = PreprocessMarktPilotTrainDataTask(experiment_name=self.experiment_name)
-            requirements["val_data"] = PreprocessMarktPilotValTestDataTask(experiment_name=self.experiment_name)
-        elif self.experiment.dataset == "wdc":
-            requirements["train_data"] = PreprocessWDCTrainDataTask(experiment_name=self.experiment_name)
-            requirements["val_data"] = PreprocessWdcValTestDataTask(experiment_name=self.experiment_name)
-        elif self.experiment.dataset in ["amazon_google", "walmart_amazon"]:
-            requirements["train_data"] = PreprocessMagellanTrainDataTask(experiment_name=self.experiment_name)
-            requirements["val_data"] = PreprocessMagellanValTestDataTask(experiment_name=self.experiment_name)
-
         return requirements
 
     def run(self) -> None:
@@ -67,23 +43,10 @@ class RunExperimentTask(LuigiBaseTask):
 
         start_time = time.time()
 
-        if self.experiment.model == "ditto":
-            # make sure to actually rerun the task
-            task = TrainDittoTask(experiment_name=self.experiment_name)
-            task.invalidate()
-            luigi.build([TrainDittoTask(experiment_name=self.experiment_name)], local_scheduler=True)
-            ditto_path = TrainDittoTask(experiment_name=self.experiment_name).output().path
-
-            ditto_output = joblib.load(ditto_path)
-            probabilities = ditto_output["probabilities"]
-            epochs_trained = ditto_output["epochs_trained"]
-        else:
-            probabilities, epochs_trained = self.run_task()
-
-        test_input_path = self.input()["val_data"].path.replace("prefix_", "custom_test_").replace("_suffix",
-                                                                                                   ".parquet")
-        df_test = pd.read_parquet(test_input_path)
+        df_test = self.get_df_test()
         true_labels = df_test.label.to_list()
+
+        probabilities, epochs_trained = self.run_task(df_test)
 
         try:
             bag = MetricsBag(y=true_labels, y_hat=probabilities[:, 1])
@@ -108,62 +71,53 @@ class RunExperimentTask(LuigiBaseTask):
     def output(self) -> luigi.LocalTarget:
         return self.make_output_target(self.output_path, f"{self.experiment.name}_{self.filename}.txt")
 
-    def run_task(self):
-        # get data
-        train_input_path = self.input()["train_data"].path.replace("prefix_", "custom_train_").replace("_suffix",
-                                                                                                       ".parquet")
-        df_train = pd.read_parquet(train_input_path)
+    def get_df_test(self):
+        if self.experiment.dataset == "mrsp":
+            df_test = pd.read_parquet(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            str_cols = ["sentence1", "sentence2"]
+            df_test[str_cols] = df_test[str_cols].astype(str)
+            df_test["label"] = df_test["label"].astype(int)
+            return df_test
 
-        val_input_path = self.input()["val_data"].path.replace("prefix_", "custom_val_").replace("_suffix", ".parquet")
-        df_val = pd.read_parquet(val_input_path)
+        raise ValueError("Unknown dataset")
 
-        test_input_path = self.input()["val_data"].path.replace("prefix_", "custom_test_").replace("_suffix",
-                                                                                                   ".parquet")
-        df_test = pd.read_parquet(test_input_path)
+    def run_task(self, df_test):
+        if self.experiment.dataset == "mrsp":
+            str_cols = ["sentence1", "sentence2"]
 
-        if self.experiment.dataset == "markt_pilot":
-            if self.experiment.model == "bert":
-                loader_factory = MarktPilotBertLoader(df_val, df_test, self.experiment)
-            else:
-                loader_factory = MarktPilotNonBertLoader(df_train, df_val, df_test, self.experiment)
+            df_train = pd.read_parquet(os.path.join(self.global_config.working_dir, self.experiment.path_to_train_set))
+            df_train[str_cols] = df_train[str_cols].astype(str)
+            df_train["label"] = df_train["label"].astype(int)
 
-        elif self.experiment.dataset == "wdc":
-            if self.experiment.model == "bert":
-                loader_factory = WdcBertLoader(df_val, df_test, self.experiment)
-            else:
-                loader_factory = WdcNonBertLoader(df_train, df_val, df_test, self.experiment)
+            df_val = pd.read_parquet(os.path.join(self.global_config.working_dir, self.experiment.path_to_val_set))
+            df_val[str_cols] = df_val[str_cols].astype(str)
+            df_val["label"] = df_val["label"].astype(int)
 
-        elif self.experiment.dataset in ["amazon_google", "walmart_amazon"]:
-            if self.experiment.model == "bert":
-                loader_factory = MagellanBertLoader(df_val, df_test, self.experiment)
-            else:
-                loader_factory = MagellanNonBertLoader(df_train, df_val, df_test, self.experiment)
+            loader_factory = MrspLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         else:
             raise ValueError("Unknown dataset name.")
 
+        train_loader = loader_factory.get_train_loader()
         val_loader = loader_factory.get_val_loader()
         test_loader = loader_factory.get_test_loader()
 
-        # get model
-        if self.experiment.model == "bert":
-            model = get_bert_model(self.experiment)
-        else:
-            raise ValueError("Unknown model name.")
+        model = get_bert_model(self.experiment)
 
         # get trainer
-        if self.experiment.model == "bert":
-            trainer = BertTrainer(
-                model=model,
-                val_dataloader=val_loader,
-                experiment=self.experiment,
-                working_dir=self.global_config.working_dir,
-            )
-        else:
-            raise ValueError("Unknown model name when trying to select trainer.)")
+        trainer = BertTrainer(
+            model=model,
+            val_dataloader=val_loader,
+            experiment=self.experiment,
+            working_dir=self.global_config.working_dir,
+            train_dataloader=train_loader
+        )
 
         # run
-        trainer.train(df_train)
+        if len(self.experiment.online_augmentation) == 0:
+            trainer.train_baseline()
+        else:
+            trainer.train(df_train)
 
         epochs_trained = trainer.training_stats[-1]["epoch"]
         probabilities, _ = trainer.evaluate(test_loader)
