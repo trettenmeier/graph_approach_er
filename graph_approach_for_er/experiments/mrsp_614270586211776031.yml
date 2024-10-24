@@ -1,11 +1,12 @@
 batch_size: 32
 dataset: mrsp
 epochs: 30
-label_noise_min_degree: 2
-label_noise_threshold: 7
+label_noise_min_degree: 5
+label_noise_threshold: 3
 max_input_length: 128
 max_string_len: 1000
 model: bert
+offline_augmentation: []
 online_augmentation:
 - graph
 path_to_test_set: data/raw/beyond_er/mrsp/test-00000-of-00001.parquet
