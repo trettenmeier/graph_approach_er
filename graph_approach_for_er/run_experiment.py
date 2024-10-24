@@ -10,7 +10,7 @@ from graph_approach_for_er.tasks.run_experiment_task import RunExperimentTask
 
 
 def main():
-    luigi.build([RunExperimentTask(experiment_name="mrsp_-1765490591633876122")], workers=1, local_scheduler=True)
+    luigi.build([RunExperimentTask(experiment_name="mrsp_5025219292349068153")], workers=1, local_scheduler=True)
 
 
 if __name__ == "__main__":
