@@ -10,7 +10,8 @@ from graph_approach_for_er.tasks.run_experiment_task import RunExperimentTask
 
 
 def main():
-    luigi.build([RunExperimentTask(experiment_name="mrsp_5025219292349068153")], workers=1, local_scheduler=True)
+    # luigi.build([RunExperimentTask(experiment_name="mrsp_5025219292349068153")], workers=1, local_scheduler=True)
+    luigi.build([RunExperimentTask(experiment_name="quora_7400298137067405060")], workers=1, local_scheduler=True)  # the baseline for quora questions
 
 
 if __name__ == "__main__":
