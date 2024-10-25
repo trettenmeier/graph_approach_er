@@ -18,14 +18,20 @@ DATASETS = [
         path_to_train_set="data/raw/beyond_er/mrsp/train-00000-of-00001.parquet",
         path_to_val_set="data/raw/beyond_er/mrsp/validation-00000-of-00001.parquet",
         path_to_test_set="data/raw/beyond_er/mrsp/test-00000-of-00001.parquet",
-    )
+    ),
+    Dataset(
+        name="quora",
+        path_to_train_set="data/raw/beyond_er/quora/questions.csv",
+        path_to_val_set="data/raw/beyond_er/quora/questions.csv",
+        path_to_test_set="data/raw/beyond_er/quora/questions.csv",
+    ),
 ]
 
 ONLINE_AUGMENTATION = ["graph"]
 
 
 def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_noise_threshold: int,
-               pos_neg_ratio_cap: int):
+               pos_neg_ratio_cap: int, baseline=False):
     epochs = 30
 
     yml_data = {
@@ -44,6 +50,9 @@ def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_n
         "label_noise_threshold": label_noise_threshold,
         "pos_neg_ratio_cap": pos_neg_ratio_cap,
     }
+
+    if baseline:
+        yml_data["online_augmentation"] = []
 
     filename = f"{dataset.name}_{str(hash(json.dumps(yml_data)))}.yml"
 
@@ -70,6 +79,9 @@ def main():
                         label_noise_threshold=label_noise_threshold,
                         pos_neg_ratio_cap=pos_neg_ratio_cap
                     )
+
+        create_yml(path=path, dataset=dataset, label_noise_min_degree=99, label_noise_threshold=99,
+                   pos_neg_ratio_cap=99, baseline=True)
 
 
 if __name__ == "__main__":
