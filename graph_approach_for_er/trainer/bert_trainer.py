@@ -307,19 +307,22 @@ class Trainer:
             negatives_list = [i for i in list_with_hardness_cleaned if i[2] == 0]
 
             # try this: remove the hardest 1% of the lists as the probability for label noise is highest
-            positives_list = positives_list[20:]
+            # positives_list = positives_list[20:]
 
             negatives_list = sorted(negatives_list, key=lambda x: x[3], reverse=True)
-            negatives_list = negatives_list[20:]
+            # negatives_list = negatives_list[20:]
 
             final_list = copy(positives_list)
 
             # select amount to train on
             pos_neg_ratio = df_train[df_train.label == 1].shape[0] / df_train[df_train.label == 0].shape[0]
 
-            negatives_list = sorted(negatives_list, key=lambda x: x[3], reverse=True)
-            expand_factor = min([int(1 / pos_neg_ratio), graph_augmentation.pos_neg_ratio_cap])
-            final_list.extend(negatives_list[: len(positives_list) * expand_factor])
+            if pos_neg_ratio >= 1:  # if there are more positives than negatives: use all negatives.
+                final_list.extend(negatives_list)
+            else:
+                negatives_list = sorted(negatives_list, key=lambda x: x[3], reverse=True)
+                expand_factor = min([int(1 / pos_neg_ratio), graph_augmentation.pos_neg_ratio_cap])
+                final_list.extend(negatives_list[: len(positives_list) * expand_factor])
 
             random.shuffle(final_list)
 
