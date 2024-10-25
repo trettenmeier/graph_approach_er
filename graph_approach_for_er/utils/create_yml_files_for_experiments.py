@@ -25,6 +25,12 @@ DATASETS = [
         path_to_val_set="data/raw/beyond_er/quora/questions.csv",
         path_to_test_set="data/raw/beyond_er/quora/questions.csv",
     ),
+    Dataset(
+        name="pawsx",
+        path_to_train_set="data/raw/beyond_er/pawsx/train.tsv",
+        path_to_val_set="data/raw/beyond_er/pawsx/dev_2k.tsv",
+        path_to_test_set="data/raw/beyond_er/pawsx/test_2k.tsv",
+    ),
 ]
 
 ONLINE_AUGMENTATION = ["graph"]

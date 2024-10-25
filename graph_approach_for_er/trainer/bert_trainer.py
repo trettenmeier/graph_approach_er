@@ -171,17 +171,20 @@ class Trainer:
             cols = df_train.columns.tolist()
             cols_left = [i for i in cols if "left" in i]
             cols_right = [i for i in cols if "right" in i]
-            df_train[cols_left] = df_train[cols_left].astype(str)
-            df_train[cols_right] = df_train[cols_right].astype(str)
-        elif self.experiment.dataset == "mrsp":
+
+        elif self.experiment.dataset == "mrsp" or self.experiment.dataset == "pawsx":
             cols_left = ["sentence1"]
             cols_right = ["sentence2"]
-            df_train[cols_left] = df_train[cols_left].astype(str)
-            df_train[cols_right] = df_train[cols_right].astype(str)
+
+        elif self.experiment.dataset == "quora":
+            cols_left = ["question1"]
+            cols_right = ["question2"]
 
         else:
             raise NotImplementedError
 
+        df_train[cols_left] = df_train[cols_left].astype(str)
+        df_train[cols_right] = df_train[cols_right].astype(str)
         graph_augmentation = GraphAugmentation(
             df_train=df_train, cols_left=cols_left, cols_right=cols_right, label="label", experiment=self.experiment
         )

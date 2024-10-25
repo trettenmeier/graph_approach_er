@@ -88,6 +88,13 @@ class RunExperimentTask(LuigiBaseTask):
             X_train, X_test, y_train, y_test = train_test_split(df, df.is_duplicate, test_size=0.2, random_state=42)
             X_test, X_val, y_test, y_val = train_test_split(X_test, X_test.is_duplicate, test_size=0.5, random_state=42)
             return X_test
+        if self.experiment.dataset == "pawsx":
+            df_test = pd.read_table(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            df_test = df_test[df_test.label.isin(["0", "1"])]
+            df_test.label = df_test.label.astype(int)
+            str_cols = ["sentence1", "sentence2"]
+            df_test[str_cols] = df_test[str_cols].astype(str)
+            return df_test
 
         raise ValueError("Unknown dataset")
 
@@ -112,9 +119,24 @@ class RunExperimentTask(LuigiBaseTask):
             df[str_cols] = df[str_cols].astype(str)
             df["label"] = df["label"].astype(int)
             df_train, X_test, y_train, y_test = train_test_split(df, df.is_duplicate, test_size=0.2, random_state=42)
-            df_test, df_val, y_test, y_val = train_test_split(X_test, X_test.is_duplicate, test_size=0.5, random_state=42)
+            df_test, df_val, y_test, y_val = train_test_split(X_test, X_test.is_duplicate, test_size=0.5,
+                                                              random_state=42)
             loader_factory = QuoraLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
+        elif self.experiment.dataset == "pawsx":
+            df_train = pd.read_table(os.path.join(self.global_config.working_dir, self.experiment.path_to_train_set))
+            df_train = df_train[df_train.label.isin(["0", "1"])]
+            df_train.label = df_train.label.astype(int)
+            str_cols = ["sentence1", "sentence2"]
+            df_train[str_cols] = df_train[str_cols].astype(str)
+
+            df_val = pd.read_table(os.path.join(self.global_config.working_dir, self.experiment.path_to_val_set))
+            df_val = df_val[df_val.label.isin(["0", "1"])]
+            df_val.label = df_val.label.astype(int)
+            df_val[str_cols] = df_val[str_cols].astype(str)
+
+            # mrsp is working since the column names are the same
+            loader_factory = MrspLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         else:
             raise ValueError("Unknown dataset name.")
