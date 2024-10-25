@@ -7,12 +7,12 @@ class QuoraLoader(MarktPilotBertLoader):
 
         def page_concat(x):
             return " ".join([
-                (x['question1'])
+                x['question1']
             ])
 
         def client_concat(x):
             return " ".join([
-                (x['question2'])
+                x['question2']
             ])
 
         df["page_concat"] = df.apply(page_concat, axis=1)

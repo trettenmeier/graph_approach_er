@@ -7,12 +7,12 @@ class MrspLoader(MarktPilotBertLoader):
 
         def page_concat(x):
             return " ".join([
-                (x['sentence1'])
+                x['sentence1']
             ])
 
         def client_concat(x):
             return " ".join([
-                (x['sentence2'])
+                x['sentence2']
             ])
 
         df["page_concat"] = df.apply(page_concat, axis=1)
