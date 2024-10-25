@@ -38,7 +38,7 @@ class RunAllExperimentsTask(LuigiBaseTask):
         for filename in os.listdir(directory_path):
             name_without_extension = os.path.splitext(filename)[0]
             filenames.append(name_without_extension)
-        return [i for i in filenames if ("__init__" not in i and "__pycache__" not in i and ("quora" in i or "mrsp" in i))]
+        return [i for i in filenames if ("__init__" not in i and "__pycache__" not in i and "quora" in i)]
 
 
 def main():
