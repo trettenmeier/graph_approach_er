@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 import json
 import yaml
+from hashlib import md5
 
 
 @dataclass
@@ -60,7 +61,8 @@ def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_n
     if baseline:
         yml_data["online_augmentation"] = []
 
-    filename = f"{dataset.name}_{str(hash(json.dumps(yml_data)))}.yml"
+    the_hash = md5(json.dumps(yml_data).encode()).hexdigest()
+    filename = f"{dataset.name}_{the_hash}.yml"
 
     with open(os.path.join(path, filename), "w") as file:
         yaml.dump(yml_data, file)
