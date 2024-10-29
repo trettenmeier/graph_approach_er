@@ -80,14 +80,6 @@ class RunExperimentTask(LuigiBaseTask):
             df_test[str_cols] = df_test[str_cols].astype(str)
             df_test["label"] = df_test["label"].astype(int)
             return df_test
-        if self.experiment.dataset == "quora":
-            df = pd.read_csv(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
-            df["label"] = df.is_duplicate
-            str_cols = ["question1", "question2"]
-            df[str_cols] = df[str_cols].astype(str)
-            X_train, X_test, y_train, y_test = train_test_split(df, df.is_duplicate, test_size=0.2, random_state=42)
-            X_test, X_val, y_test, y_val = train_test_split(X_test, X_test.is_duplicate, test_size=0.5, random_state=42)
-            return X_test
         if self.experiment.dataset == "pawsx":
             df_test = pd.read_table(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
             str_cols = ["sentence1", "sentence2"]
@@ -115,17 +107,6 @@ class RunExperimentTask(LuigiBaseTask):
             df_val["label"] = df_val["label"].astype(int)
 
             loader_factory = MrspLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
-
-        elif self.experiment.dataset == "quora":
-            df = pd.read_csv(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
-            df["label"] = df.is_duplicate
-            str_cols = ["question1", "question2"]
-            df[str_cols] = df[str_cols].astype(str)
-            df["label"] = df["label"].astype(int)
-            df_train, X_test, y_train, y_test = train_test_split(df, df.is_duplicate, test_size=0.2, random_state=42)
-            df_test, df_val, y_test, y_val = train_test_split(X_test, X_test.is_duplicate, test_size=0.5,
-                                                              random_state=42)
-            loader_factory = QuoraLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         elif self.experiment.dataset == "pawsx":
             df_train = pd.read_table(os.path.join(self.global_config.working_dir, self.experiment.path_to_train_set))
