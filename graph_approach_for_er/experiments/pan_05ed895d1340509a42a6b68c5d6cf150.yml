@@ -2,8 +2,8 @@ batch_size: 32
 dataset: pan
 epochs: 10
 label_noise_min_degree: 7
-label_noise_threshold: 3
-max_input_length: 128
+label_noise_threshold: 7
+max_input_length: 256
 max_string_len: 1000
 model: bert
 offline_augmentation: []

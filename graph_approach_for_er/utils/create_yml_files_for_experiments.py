@@ -4,7 +4,6 @@ import json
 import yaml
 from hashlib import md5
 
-
 @dataclass
 class Dataset:
     name: str
@@ -49,7 +48,7 @@ def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_n
         "path_to_test_set": dataset.path_to_test_set,
         "batch_size": 32,
         "max_string_len": 1000,
-        "max_input_length": 128,
+        "max_input_length": 256 if dataset.name == "pan" else 128,
         "epochs": epochs,
         "online_augmentation": ["graph"],
         "offline_augmentation": [],

@@ -10,10 +10,9 @@ from graph_approach_for_er.tasks.run_experiment_task import RunExperimentTask
 
 
 def main():
-    luigi.build([RunExperimentTask(experiment_name="pan_cbf7e0dc3174e43305c6574b5bc7c6db")],
+    luigi.build([RunExperimentTask(experiment_name="pan_a21262b92b0c211d325da68a1c33c672")],
                 workers=1,
                 local_scheduler=True)
-# pan_6216ab0ba860d98cf0284217bb7c2bbd
 
 if __name__ == "__main__":
     main()
