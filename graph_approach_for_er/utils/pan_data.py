@@ -15,7 +15,7 @@ class PanDataPreprocessing:
 
         df["left"] = df.apply(lambda x: str(x["pair"][0]), axis=1)
         df["right"] = df.apply(lambda x: str(x["pair"][1]), axis=1)
-        df["label"] = df.apply(lambda x: 1 if True else 0, axis=1)
+        df["label"] = df.apply(lambda x: 1 if x["same"] else 0, axis=1)
         self.relevant_columns = ["left", "right", "label"]
 
         self.df_train, df_other = train_test_split(df, random_state=123, test_size=0.2)
