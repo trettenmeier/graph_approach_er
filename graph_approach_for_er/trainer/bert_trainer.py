@@ -180,6 +180,10 @@ class Trainer:
             cols_left = ["question1"]
             cols_right = ["question2"]
 
+        elif self.experiment.dataset == "pan":
+            cols_left = ["left"]
+            cols_right = ["right"]
+
         else:
             raise NotImplementedError
 

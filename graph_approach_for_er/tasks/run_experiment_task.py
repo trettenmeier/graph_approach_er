@@ -8,15 +8,15 @@ import luigi
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.model_selection import train_test_split
 
 from graph_approach_for_er.dataloader.mrsp_loader import MrspLoader
-from graph_approach_for_er.dataloader.quora_loader import QuoraLoader
 from graph_approach_for_er.metrics.metricsbag import MetricsBag
 from graph_approach_for_er.models.bert import get_model as get_bert_model
 from graph_approach_for_er.tasks.base import LuigiBaseTask
 from graph_approach_for_er.trainer.bert_trainer import Trainer as BertTrainer
 from graph_approach_for_er.utils.load_config import load_global_config, load_config
+from graph_approach_for_er.utils.pan_data import PanDataPreprocessing
+from graph_approach_for_er.dataloader.pan_loader import PanLoader
 
 
 class RunExperimentTask(LuigiBaseTask):
@@ -89,6 +89,10 @@ class RunExperimentTask(LuigiBaseTask):
             df_test.label = df_test.label.astype(int)
             df_test = df_test[df_test.label.isin([0, 1])]
             df_test[str_cols] = df_test[str_cols].astype(str)
+        if self.experiment.dataset == "pan":
+            pan_data = PanDataPreprocessing(
+                path_to_data=os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            df_test = pan_data.get_df_test()
 
             return df_test
 
@@ -125,6 +129,15 @@ class RunExperimentTask(LuigiBaseTask):
 
             # mrsp is working since the column names are the same
             loader_factory = MrspLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
+
+        elif self.experiment.dataset == "pan":
+            pan_data = PanDataPreprocessing(
+                path_to_data=os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            df_test = pan_data.get_df_test()
+            df_train = pan_data.get_df_train()
+            df_val = pan_data.get_df_val()
+
+            loader_factory = PanLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         else:
             raise ValueError("Unknown dataset name.")

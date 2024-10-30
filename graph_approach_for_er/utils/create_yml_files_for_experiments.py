@@ -21,16 +21,16 @@ DATASETS = [
         path_to_test_set="data/raw/beyond_er/mrsp/test-00000-of-00001.parquet",
     ),
     Dataset(
-        name="quora",
-        path_to_train_set="data/raw/beyond_er/quora/questions.csv",
-        path_to_val_set="data/raw/beyond_er/quora/questions.csv",
-        path_to_test_set="data/raw/beyond_er/quora/questions.csv",
-    ),
-    Dataset(
         name="pawsx",
         path_to_train_set="data/raw/beyond_er/pawsx/train.tsv",
         path_to_val_set="data/raw/beyond_er/pawsx/dev_2k.tsv",
         path_to_test_set="data/raw/beyond_er/pawsx/test_2k.tsv",
+    ),
+    Dataset(
+        name="pan",
+        path_to_train_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
+        path_to_val_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
+        path_to_test_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
     ),
 ]
 
