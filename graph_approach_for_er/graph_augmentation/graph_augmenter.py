@@ -53,7 +53,7 @@ class GraphAugmentation:
 
         logging.info("Setting up the graph")
         for _, row in tqdm(df.iterrows(), total=df.shape[0]):
-            if self.experiment.model == "bert":
+            if self.experiment.model == "bert" and not self.experiment.dataset == "lfw":
                 left = row[self.cols_left].values.tolist()
                 right = row[self.cols_right].values.tolist()
                 left = " ".join([str(i) for i in left if i is not None and i != np.nan and i.lower() != "null"])
@@ -72,6 +72,10 @@ class GraphAugmentation:
 
                 left = left.strip()
                 right = right.strip()
+
+            elif self.experiment.dataset == "lfw":
+                left = row["left"]
+                right = row["right"]
 
             else:
                 raise NotImplementedError("unknown model type")
@@ -246,9 +250,22 @@ class GraphAugmentation:
 
         for i in range(0, len(dataset), batch_size):
             batch = dataset[i: i + batch_size]
-            if self.experiment.model == "bert":
+            if self.experiment.model == "bert" and self.experiment.dataset != "lfw":
                 input_ids, token_type_ids, labels = self.construct_data_points(batch)
                 yield {"input_ids": input_ids, "token_type_ids": token_type_ids, "labels": labels}
+            elif self.experiment.dataset == "lfw":
+                lefts = [i[0] for i in batch]
+                data_lefts = [self.data[i] for i in lefts]
+
+                rights = [i[1] for i in batch]
+                data_rights = [self.data[i] for i in rights]
+
+                labels = [i[2] for i in batch]
+
+                data_lefts = torch.stack(data_lefts)
+                data_rights = torch.stack(data_rights)
+                labels = torch.tensor(labels)
+                yield {"left": data_lefts, "right": data_rights, "labels": labels}
             else:
                 input_ids, labels = self.construct_data_points_for_ditto(batch)
                 yield {"input_ids": input_ids, "labels": labels}
