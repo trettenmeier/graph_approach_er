@@ -274,7 +274,14 @@ class GraphAugmentation:
         batch_size = self.experiment.batch_size
 
         for i in range(0, len(self.all_pairs), batch_size):
-            yield self.all_pairs[i: i + batch_size]
+            if self.experiment.dataset != "lfw":
+                yield self.all_pairs[i: i + batch_size]
+            else:
+                to_yield = []
+                for key_left, key_right, label in self.all_pairs[i: i + batch_size]:
+                    val = (self.data[key_left], self.data[key_right], label)
+                    to_yield.append(val)
+                yield to_yield
 
     def construct_data_points(self, batch):
         input_ids = []
@@ -321,7 +328,6 @@ class GraphAugmentation:
 
     def batch_iterable(self, iterable):
         batch_size = self.experiment.batch_size
-
         for i in range(0, len(iterable), batch_size):
             yield iterable[i: i + batch_size]
 

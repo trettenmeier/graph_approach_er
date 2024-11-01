@@ -45,7 +45,7 @@ ONLINE_AUGMENTATION = ["graph"]
 
 def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_noise_threshold: int,
                pos_neg_ratio_cap: int, baseline=False):
-    epochs = 10
+    epochs = 10 if dataset.name != "lfw" else 30
 
     yml_data = {
         "model": "bert",

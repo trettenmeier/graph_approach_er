@@ -35,6 +35,6 @@ class LfwLoader:
         return dataloader
 
     def get_test_loader(self):
-        dataset = CustomDataset(self.df_val)
+        dataset = CustomDataset(self.df_test)
         dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
         return dataloader

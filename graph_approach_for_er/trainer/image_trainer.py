@@ -16,7 +16,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
 from graph_approach_for_er.graph_augmentation.graph_augmenter import GraphAugmentation
-from graph_approach_for_er.models.bert import get_model
+from graph_approach_for_er.models.image import get_model
 from graph_approach_for_er.utils.early_stopping import EarlyStopper, StopTrainingWhenTrainLossIsNearZero
 from graph_approach_for_er.utils.load_config import ExperimentConfiguration
 
@@ -60,7 +60,7 @@ class Trainer:
         self.best_val_f1 = -1
 
     def load_trained_model(self):
-        self.model = get_model(self.experiment)
+        self.model = get_model()
         self.model.load_state_dict(torch.load(os.path.join(self.model_path, "model.pt")))
         self.model.to(self.device)
         self.model.eval()
@@ -347,7 +347,7 @@ class Trainer:
                 rights = []
                 labels = []
 
-                for left, right, label in batch:
+                for left, right, label, _ in batch:
                     lefts.append(left)
                     rights.append(right)
                     labels.append(label)
