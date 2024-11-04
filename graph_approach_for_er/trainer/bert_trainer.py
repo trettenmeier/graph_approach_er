@@ -106,7 +106,7 @@ class Trainer:
             for step, batch in enumerate(self.train_dataloader):
                 if step % 40 == 0 and not step == 0:
                     elapsed = self.format_time(time.time() - t0)
-                    logging.info(f"Step {step}. Elapsed: {elapsed}")
+                    logging.info(f"Step {step} of {len(self.train_dataloader)}. Elapsed: {elapsed}")
 
                 self.model.zero_grad()
                 self.optimizer.zero_grad()
@@ -180,7 +180,7 @@ class Trainer:
             cols_left = ["question1"]
             cols_right = ["question2"]
 
-        elif self.experiment.dataset == "pan":
+        elif self.experiment.dataset == "pan" or self.experiment.dataset == "plagiarism":
             cols_left = ["left"]
             cols_right = ["right"]
 

@@ -33,10 +33,10 @@ DATASETS = [
         path_to_test_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
     ),
     Dataset(
-        name="lfw",
-        path_to_train_set="data/raw/beyond_er/lfw",
-        path_to_val_set="data/raw/beyond_er/lfw",
-        path_to_test_set="data/raw/beyond_er/lfw",
+        name="plagiarism",
+        path_to_train_set="data/raw/beyond_er/plagiarism",
+        path_to_val_set="data/raw/beyond_er/plagiarism",
+        path_to_test_set="data/raw/beyond_er/plagiarism",
     )
 ]
 

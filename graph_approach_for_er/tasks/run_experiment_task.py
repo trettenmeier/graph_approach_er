@@ -12,15 +12,13 @@ import torch
 from graph_approach_for_er.dataloader.mrsp_loader import MrspLoader
 from graph_approach_for_er.metrics.metricsbag import MetricsBag
 from graph_approach_for_er.models.bert import get_model as get_bert_model
-from graph_approach_for_er.models.image import get_model as get_image_model
 from graph_approach_for_er.tasks.base import LuigiBaseTask
 from graph_approach_for_er.trainer.bert_trainer import Trainer as BertTrainer
-from graph_approach_for_er.trainer.image_trainer import Trainer as ImageTrainer
 from graph_approach_for_er.utils.load_config import load_global_config, load_config
 from graph_approach_for_er.utils.pan_data import PanDataPreprocessing
 from graph_approach_for_er.dataloader.pan_loader import PanLoader
-from graph_approach_for_er.utils.lfw_data import LfwDataProcessing
-from graph_approach_for_er.dataloader.lfw_loader import LfwLoader
+from graph_approach_for_er.utils.plagiarism_data import PlagiarismDataPreprocessing
+from graph_approach_for_er.dataloader.plagiarism_loader import PlagiarismLoader
 
 
 class RunExperimentTask(LuigiBaseTask):
@@ -98,11 +96,10 @@ class RunExperimentTask(LuigiBaseTask):
                 path_to_data=os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
             df_test = pan_data.get_df_test()
             return df_test
-
-        if self.experiment.dataset == "lfw":
-            lfw_data = LfwDataProcessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
-            df_test = lfw_data.get_df_test()
-
+        
+        if self.experiment.dataset == "plagiarism":
+            plagiarism_data = PlagiarismDataPreprocessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set, "train_snli.txt"))
+            df_test = plagiarism_data.get_df_test()
             return df_test
 
         raise ValueError("Unknown dataset")
@@ -148,11 +145,12 @@ class RunExperimentTask(LuigiBaseTask):
 
             loader_factory = PanLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
-        elif self.experiment.dataset == "lfw":
-            lfw_data = LfwDataProcessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
-            df_val = lfw_data.get_df_val()
-            df_train = lfw_data.get_df_train()
-            loader_factory = LfwLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
+        elif self.experiment.dataset == "plagiarism":
+            plagiarism_data = PlagiarismDataPreprocessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set, "train_snli.txt"))
+            df_train = plagiarism_data.get_df_train()
+            df_val = plagiarism_data.get_df_val()
+
+            loader_factory = PlagiarismLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         else:
             raise ValueError("Unknown dataset name.")
@@ -161,25 +159,14 @@ class RunExperimentTask(LuigiBaseTask):
         val_loader = loader_factory.get_val_loader()
         test_loader = loader_factory.get_test_loader()
 
-        if self.experiment.dataset == "lfw":
-            model = get_image_model()
-            trainer = ImageTrainer(
-                model=model,
-                val_dataloader=val_loader,
-                experiment=self.experiment,
-                working_dir=self.global_config.working_dir,
-                train_dataloader=train_loader
-            )
-
-        else:
-            model = get_bert_model(self.experiment)
-            trainer = BertTrainer(
-                model=model,
-                val_dataloader=val_loader,
-                experiment=self.experiment,
-                working_dir=self.global_config.working_dir,
-                train_dataloader=train_loader
-            )
+        model = get_bert_model(self.experiment)
+        trainer = BertTrainer(
+            model=model,
+            val_dataloader=val_loader,
+            experiment=self.experiment,
+            working_dir=self.global_config.working_dir,
+            train_dataloader=train_loader
+        )
 
         # run
         if len(self.experiment.online_augmentation) == 0:
