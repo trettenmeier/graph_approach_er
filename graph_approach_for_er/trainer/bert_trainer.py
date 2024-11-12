@@ -70,12 +70,20 @@ class Trainer:
         token_type_ids = batch["token_type_ids"].to(self.device)
         labels = batch["labels"].to(self.device, dtype=torch.long)
 
-        # forward pass
-        if train:
-            result, labels = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+        if self.experiment.model == "bert":
+            # forward pass
+            if train:
+                result, labels = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+            else:
+                with torch.no_grad():
+                    result = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
         else:
-            with torch.no_grad():
-                result = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                        # forward pass
+            if train:
+                result, labels = self.model(input_ids=input_ids)
+            else:
+                with torch.no_grad():
+                    result = self.model(input_ids=input_ids)
 
         return result, labels
 
@@ -208,11 +216,16 @@ class Trainer:
             self.optimizer.zero_grad()
 
             input_ids = batch["input_ids"].to(self.device)
-            token_type_ids = batch["token_type_ids"].to(self.device)
             labels = batch["labels"].to(self.device, dtype=torch.long)
-
+            
             # forward pass
-            outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+            if self.experiment.model != "bert":
+                outputs = self.model(input_ids=input_ids)
+            else:
+
+                token_type_ids = batch["token_type_ids"].to(self.device)
+                outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+
             logits = outputs["logits"]
             ce_loss = loss(logits, labels.to(self.device))
             total_train_loss += ce_loss.item()
@@ -272,23 +285,32 @@ class Trainer:
                     labels = []
 
                     for left_index, right_index, label in batch:
-                        current_input_ids, current_token_type_ids = graph_augmentation.construct_single_data_point(
-                            left_index, right_index
-                        )
-                        input_ids.append(current_input_ids)
-                        token_type_ids.append(current_token_type_ids)
-                        labels.append(label)
+                        if self.experiment.model == "bert":
+                            current_input_ids, current_token_type_ids = graph_augmentation.construct_single_data_point(
+                                left_index, right_index
+                            )
+                            input_ids.append(current_input_ids)
+                            token_type_ids.append(current_token_type_ids)
+                            labels.append(label)
+                        else:
+                           current_input_ids = graph_augmentation.construct_single_data_point(left_index, right_index)
+                           input_ids.append(current_input_ids)
+                           labels.append(label) 
 
                     input_ids = torch.stack(input_ids)
-                    token_type_ids = torch.stack(token_type_ids)
                     labels = torch.tensor(labels)
-
                     input_ids = input_ids.to(self.device)
-                    token_type_ids = token_type_ids.to(self.device)
                     labels = labels.to(self.device, dtype=torch.long)
 
-                    outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                    # forward pass
+                    if self.experiment.model != "bert":
+                        outputs = self.model(input_ids=input_ids)
+                    else:
+                        token_type_ids = torch.stack(token_type_ids)
+                        token_type_ids = token_type_ids.to(self.device)
+                        outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
 
+                   
                     logits = outputs["logits"]
 
                     ce_loss = F.cross_entropy(logits, labels, reduction="none")
@@ -350,20 +372,28 @@ class Trainer:
                     left = graph_augmentation.get_datapoint_from_table_idx(left_index)
                     right = graph_augmentation.get_datapoint_from_table_idx(right_index)
 
-                    current_input_ids, current_token_type_ids = graph_augmentation.tokenize(left, right)
-                    input_ids.append(current_input_ids)
-                    token_type_ids.append(current_token_type_ids)
-                    labels.append(label)
+                    if self.experiment.model == "bert":
+                        current_input_ids, current_token_type_ids = graph_augmentation.tokenize(left, right)
+                        input_ids.append(current_input_ids)
+                        token_type_ids.append(current_token_type_ids)
+                        labels.append(label)
+                    else:
+                        current_input_ids = graph_augmentation.tokenize(left, right)
+                        input_ids.append(current_input_ids)
+                        labels.append(label)
 
+                
                 input_ids = torch.stack(input_ids)
-                token_type_ids = torch.stack(token_type_ids)
                 labels = torch.tensor(labels)
-
                 input_ids = input_ids.to(self.device)
-                token_type_ids = token_type_ids.to(self.device)
                 labels = labels.to(self.device, dtype=torch.long)
 
-                outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                if self.experiment.model == "bert":
+                    token_type_ids = torch.stack(token_type_ids)
+                    token_type_ids = token_type_ids.to(self.device)
+                    outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                else:
+                    outputs = self.model(input_ids=input_ids)
 
                 logits = outputs["logits"]
 

@@ -12,6 +12,7 @@ import torch
 from graph_approach_for_er.dataloader.mrsp_loader import MrspLoader
 from graph_approach_for_er.metrics.metricsbag import MetricsBag
 from graph_approach_for_er.models.bert import get_model as get_bert_model
+from graph_approach_for_er.models.distilbert import get_model as get_distilbert_model
 from graph_approach_for_er.tasks.base import LuigiBaseTask
 from graph_approach_for_er.trainer.bert_trainer import Trainer as BertTrainer
 from graph_approach_for_er.utils.load_config import load_global_config, load_config
@@ -159,7 +160,13 @@ class RunExperimentTask(LuigiBaseTask):
         val_loader = loader_factory.get_val_loader()
         test_loader = loader_factory.get_test_loader()
 
-        model = get_bert_model(self.experiment)
+        if self.experiment.model == "bert":
+            model = get_bert_model(self.experiment)
+        elif self.experiment.model == "distilbert":
+            model = get_distilbert_model(self.experiment)
+        else:
+            raise ValueError(f"unknown model: {self.experiment.model}")
+
         trainer = BertTrainer(
             model=model,
             val_dataloader=val_loader,

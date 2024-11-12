@@ -36,7 +36,7 @@ class GraphAugmentation:
 
         if self.experiment.model == "bert":
             self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        elif self.experiment.model == "ditto":
+        elif self.experiment.model in ["ditto", "distilbert"]:
             self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
         else:
             raise NotImplementedError("Unkown model type")
@@ -53,7 +53,7 @@ class GraphAugmentation:
 
         logging.info("Setting up the graph")
         for _, row in tqdm(df.iterrows(), total=df.shape[0]):
-            if self.experiment.model == "bert" and not self.experiment.dataset == "lfw":
+            if self.experiment.model in ["bert", "distilbert"]: 
                 left = row[self.cols_left].values.tolist()
                 right = row[self.cols_right].values.tolist()
                 left = " ".join([str(i) for i in left if i is not None and i != np.nan and i.lower() != "null"])
@@ -72,11 +72,6 @@ class GraphAugmentation:
 
                 left = left.strip()
                 right = right.strip()
-
-            elif self.experiment.dataset == "lfw":
-                left = row["left"]
-                right = row["right"]
-
             else:
                 raise NotImplementedError("unknown model type")
 
@@ -250,22 +245,9 @@ class GraphAugmentation:
 
         for i in range(0, len(dataset), batch_size):
             batch = dataset[i: i + batch_size]
-            if self.experiment.model == "bert" and self.experiment.dataset != "lfw":
+            if self.experiment.model == "bert":
                 input_ids, token_type_ids, labels = self.construct_data_points(batch)
                 yield {"input_ids": input_ids, "token_type_ids": token_type_ids, "labels": labels}
-            elif self.experiment.dataset == "lfw":
-                lefts = [i[0] for i in batch]
-                data_lefts = [self.data[i] for i in lefts]
-
-                rights = [i[1] for i in batch]
-                data_rights = [self.data[i] for i in rights]
-
-                labels = [i[2] for i in batch]
-
-                data_lefts = torch.stack(data_lefts)
-                data_rights = torch.stack(data_rights)
-                labels = torch.tensor(labels)
-                yield {"left": data_lefts, "right": data_rights, "labels": labels}
             else:
                 input_ids, labels = self.construct_data_points_for_ditto(batch)
                 yield {"input_ids": input_ids, "labels": labels}
@@ -303,7 +285,6 @@ class GraphAugmentation:
     def construct_data_points_for_ditto(self, batch):
         input_ids = []
         labels = []
-
         for left_index, right_index, label in batch:
             current_input_ids = self.construct_single_data_point(left_index, right_index)
             input_ids.append(current_input_ids)
@@ -320,7 +301,7 @@ class GraphAugmentation:
             right = self.get_datapoint_from_table_idx(right_index)
             input_ids, token_type_ids = self.tokenize(left, right)
             return input_ids, token_type_ids
-        if self.experiment.model == "ditto":
+        if self.experiment.model in ["ditto", "distilbert"]:
             left = self.get_datapoint_from_table_idx(left_index)
             right = self.get_datapoint_from_table_idx(right_index)
             input_ids = self.tokenize(left, right)

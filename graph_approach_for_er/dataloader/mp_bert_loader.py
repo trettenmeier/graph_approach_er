@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 import transformers
 
-from transformers import BertTokenizer
+from transformers import BertTokenizer, DistilBertTokenizer
 from tqdm import tqdm
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, Dataset
 
@@ -88,7 +88,11 @@ class MarktPilotBertLoader:
         return client_sentences, page_sentences, labels
 
     def _tokenize(self, client_sentences, page_sentences):
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        if self.experiment.model == "bert":  
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        elif self.experiment.model == "distilbert":
+            tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', do_lower_case=True) 
+
 
         input_ids = []
         token_type_ids = []
@@ -108,7 +112,11 @@ class MarktPilotBertLoader:
             )
 
             input_ids.append(torch.squeeze(encoded_dict['input_ids']))
-            token_type_ids.append(torch.squeeze(encoded_dict["token_type_ids"]))
+
+            if self.experiment.model == "bert":
+                token_type_ids.append(torch.squeeze(encoded_dict["token_type_ids"]))
+            else:
+                token_type_ids.append(torch.squeeze(encoded_dict["input_ids"]))
 
         transformers.utils.logging.set_verbosity_warning()
 
@@ -137,7 +145,11 @@ class CustomDataset(Dataset):
         self.experiment = experiment
         self.train_dataset = train_dataset
         self.augmenter = MixDA()
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+
+        if self.experiment.model == "bert":  
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        elif self.experiment.model == "distilbert":
+            self.tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', do_lower_case=True) 
 
     def __len__(self):
         return self.df.shape[0]

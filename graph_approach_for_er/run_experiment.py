@@ -10,7 +10,7 @@ from graph_approach_for_er.tasks.run_experiment_task import RunExperimentTask
 
 
 def main():
-    luigi.build([RunExperimentTask(experiment_name="plagiarism_4a8bc982d95cb35d303f163aa5006d46")],
+    luigi.build([RunExperimentTask(experiment_name="mrsp_0c52f3736fe2fdbe788695bfc49c7cc5")],
                 workers=1,
                 local_scheduler=True)
 
