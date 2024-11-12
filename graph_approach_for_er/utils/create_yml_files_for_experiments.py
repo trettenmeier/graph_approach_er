@@ -31,24 +31,18 @@ DATASETS = [
         path_to_train_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
         path_to_val_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
         path_to_test_set="data/raw/beyond_er/pan/pan20-authorship-verification-training-small-truth.jsonl",
-    ),
-    Dataset(
-        name="plagiarism",
-        path_to_train_set="data/raw/beyond_er/plagiarism",
-        path_to_val_set="data/raw/beyond_er/plagiarism",
-        path_to_test_set="data/raw/beyond_er/plagiarism",
     )
 ]
 
 ONLINE_AUGMENTATION = ["graph"]
-
+MODELS = ["bert", "distilbert"]
 
 def create_yml(path: str, dataset: Dataset, label_noise_min_degree: int, label_noise_threshold: int,
-               pos_neg_ratio_cap: int, baseline=False):
+               pos_neg_ratio_cap: int, model: str, baseline=False):
     epochs = 10 if dataset.name != "lfw" else 30
 
     yml_data = {
-        "model": "bert",
+        "model": model,
         "dataset": dataset.name,
         "path_to_train_set": dataset.path_to_train_set,
         "path_to_val_set": dataset.path_to_val_set,
@@ -86,16 +80,21 @@ def main():
         for label_noise_min_degree in label_noise_min_degrees:
             for label_noise_threshold in label_noise_thresholds:
                 for pos_neg_ratio_cap in pos_neg_ratio_caps:
-                    create_yml(
-                        dataset=dataset,
-                        path=path,
-                        label_noise_min_degree=label_noise_min_degree,
-                        label_noise_threshold=label_noise_threshold,
-                        pos_neg_ratio_cap=pos_neg_ratio_cap
-                    )
+                    for model in MODELS:
+                        create_yml(
+                            dataset=dataset,
+                            path=path,
+                            label_noise_min_degree=label_noise_min_degree,
+                            label_noise_threshold=label_noise_threshold,
+                            pos_neg_ratio_cap=pos_neg_ratio_cap,
+                            model=model
+                        )
 
         create_yml(path=path, dataset=dataset, label_noise_min_degree=99, label_noise_threshold=99,
-                   pos_neg_ratio_cap=99, baseline=True)
+                   pos_neg_ratio_cap=99, model=MODELS[0], baseline=True)
+        
+        create_yml(path=path, dataset=dataset, label_noise_min_degree=99, label_noise_threshold=99,
+                   pos_neg_ratio_cap=99, model=MODELS[1], baseline=True)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,9 @@ class PlagiarismDataPreprocessing:
     def __init__(self, path_to_data: str):
         df = pd.read_table(path_to_data, names=["left", "right", "label"])
 
+        print("sampling 10000 rows")
+        df = df.sample(n=10000, random_state=123123).reset_index(drop=True)
+
         df["left"] = df["left"].astype(str)
         df["right"] = df["right"].astype(str)
         df["label"] = df["label"].astype(int)
