@@ -20,6 +20,7 @@ from graph_approach_for_er.utils.pan_data import PanDataPreprocessing
 from graph_approach_for_er.dataloader.pan_loader import PanLoader
 from graph_approach_for_er.utils.plagiarism_data import PlagiarismDataPreprocessing
 from graph_approach_for_er.dataloader.plagiarism_loader import PlagiarismLoader
+from graph_approach_for_er.utils.same_source_data import SameSourceDataPreprocessing
 
 
 class RunExperimentTask(LuigiBaseTask):
@@ -92,6 +93,7 @@ class RunExperimentTask(LuigiBaseTask):
             df_test.label = df_test.label.astype(int)
             df_test = df_test[df_test.label.isin([0, 1])]
             df_test[str_cols] = df_test[str_cols].astype(str)
+            return df_test
         if self.experiment.dataset == "pan":
             pan_data = PanDataPreprocessing(
                 path_to_data=os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
@@ -101,6 +103,11 @@ class RunExperimentTask(LuigiBaseTask):
         if self.experiment.dataset == "plagiarism":
             plagiarism_data = PlagiarismDataPreprocessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set, "train_snli.txt"))
             df_test = plagiarism_data.get_df_test()
+            return df_test
+
+        if self.experiment.dataset == "same_source":
+            data = SameSourceDataPreprocessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            df_test = data.get_df_test()
             return df_test
 
         raise ValueError("Unknown dataset")
@@ -151,6 +158,12 @@ class RunExperimentTask(LuigiBaseTask):
             df_train = plagiarism_data.get_df_train()
             df_val = plagiarism_data.get_df_val()
 
+            loader_factory = PlagiarismLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
+
+        elif self.experiment.dataset == "same_source":
+            data = SameSourceDataPreprocessing(os.path.join(self.global_config.working_dir, self.experiment.path_to_test_set))
+            df_train = data.get_df_train()
+            df_val = data.get_df_val()
             loader_factory = PlagiarismLoader(df_train=df_train, df_val=df_val, df_test=df_test, experiment=self.experiment)
 
         else:

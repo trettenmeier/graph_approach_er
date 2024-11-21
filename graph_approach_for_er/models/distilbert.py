@@ -1,6 +1,6 @@
 import torch
 
-from transformers import BertModel
+from transformers import DistilBertForSequenceClassification
 
 from graph_approach_for_er.utils.load_config import ExperimentConfiguration
 
@@ -14,21 +14,9 @@ class Model(torch.nn.Module):
         super(Model, self).__init__()
         self.experiment = experiment
 
-        self.bert = BertModel.from_pretrained("distilbert-base-uncased")
-        self.dropout = torch.nn.Dropout(p=0.1)
-        self.fc = torch.nn.Linear(in_features=self.bert.config.hidden_size, out_features=2)
+        self.bert = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased")
 
     def forward(self, input_ids):
-        embeddings = self.bert.embeddings(input_ids=input_ids)
-
-        encoded = self.bert.encoder(embeddings)
-        output = self.bert.pooler(encoded.last_hidden_state)
-
-        output = self.dropout(output)
-
-        return {"logits": self.fc(output), "last_hidden_state": encoded.last_hidden_state}
-
-    def forward_from_last_hidden_state(self, last_hidden_state):
-        output = self.bert.pooler(last_hidden_state)
-        output = self.dropout(output)
-        return self.fc(output)
+        attention_mask = (input_ids != 0).long()
+        output = self.bert(input_ids, attention_mask=attention_mask)
+        return {"logits": output["logits"], "last_hidden_state": None}

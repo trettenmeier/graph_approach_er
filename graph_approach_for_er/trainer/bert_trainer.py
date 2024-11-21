@@ -16,7 +16,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
 from graph_approach_for_er.graph_augmentation.graph_augmenter import GraphAugmentation
-from graph_approach_for_er.models.bert import get_model
+from graph_approach_for_er.models.bert import get_model as get_bert_model
+from graph_approach_for_er.models.distilbert import get_model as get_distilbert_model
 from graph_approach_for_er.utils.early_stopping import EarlyStopper, StopTrainingWhenTrainLossIsNearZero
 from graph_approach_for_er.utils.load_config import ExperimentConfiguration
 
@@ -60,17 +61,20 @@ class Trainer:
         self.best_val_f1 = -1
 
     def load_trained_model(self):
-        self.model = get_model(self.experiment)
+        if self.experiment.model == "bert":
+            self.model = get_bert_model(self.experiment)
+        else:
+            self.model = get_distilbert_model(self.experiment)
         self.model.load_state_dict(torch.load(os.path.join(self.model_path, "model.pt")))
         self.model.to(self.device)
         self.model.eval()
 
     def move_to_cuda_and_get_model_output(self, batch, train=False):
         input_ids = batch["input_ids"].to(self.device)
-        token_type_ids = batch["token_type_ids"].to(self.device)
         labels = batch["labels"].to(self.device, dtype=torch.long)
 
         if self.experiment.model == "bert":
+            token_type_ids = batch["token_type_ids"].to(self.device)
             # forward pass
             if train:
                 result, labels = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
@@ -78,7 +82,7 @@ class Trainer:
                 with torch.no_grad():
                     result = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
         else:
-                        # forward pass
+            # forward pass
             if train:
                 result, labels = self.model(input_ids=input_ids)
             else:
@@ -120,11 +124,15 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 input_ids = batch["input_ids"].to(self.device)
-                token_type_ids = batch["token_type_ids"].to(self.device)
                 labels = batch["labels"].to(self.device, dtype=torch.long)
 
-                # forward pass
-                outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                if self.experiment.model == "bert":
+                    token_type_ids = batch["token_type_ids"].to(self.device)
+                    outputs = self.model(input_ids=input_ids, token_type_ids=token_type_ids)
+                else:
+                    outputs = self.model(input_ids=input_ids)
+
+                
                 logits = outputs["logits"]
                 ce_loss = loss(logits, labels.to(self.device))
                 total_train_loss += ce_loss.item()
@@ -188,7 +196,7 @@ class Trainer:
             cols_left = ["question1"]
             cols_right = ["question2"]
 
-        elif self.experiment.dataset == "pan" or self.experiment.dataset == "plagiarism":
+        elif self.experiment.dataset == "pan" or self.experiment.dataset == "plagiarism" or self.experiment.dataset == "same_source":
             cols_left = ["left"]
             cols_right = ["right"]
 

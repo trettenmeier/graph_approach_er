@@ -28,10 +28,8 @@ class EarlyStopper:
 class StopTrainingWhenTrainLossIsNearZero:
     @staticmethod
     def training_loss_is_near_zero(train_loss):
-        logger.info("Stopping training when loss is near zero has been disabled.")
-        return False
-        """
+        # logger.info("Stopping training when loss is near zero has been disabled.")
+        # return False
         if train_loss < 0.001:
             return True
         return False
-        """
